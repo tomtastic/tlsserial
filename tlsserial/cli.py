@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """ grab some things from a TLS cert """
 # TODO:
-# - Show basic constraints
-# - Show SHA256 fingerprint
+# - Show version, dont try extensions if not 3
+# - Clearly show SANs with specifier, eg.
+#     DNS:*.axiom-partners.com
+# - Show v3 basic constraints, eg. CA / critical
 # - Show the full certificate chain
 # - Compare against INTB (and others) cipher suite?
 #   - Clarify ciphers in use
@@ -48,14 +50,14 @@ def main(url, file, debug) -> None:
         host, port = get_args(url)
         cert = tlsserial.helper.get_cert_from_host(host, port)
         if cert[0] is not None:
-            display(host, parse_x509(cert[0]))
+            display(host, parse_x509(cert[0]), debug)
         else:
             print(cert[1])
     elif file:
         host = ""
         cert = tlsserial.helper.get_cert_from_file(file)
         if cert[0] is not None:
-            display(host, parse_x509(cert[0]))
+            display(host, parse_x509(cert[0]), debug)
         else:
             print(cert[1])
     else:
@@ -112,20 +114,21 @@ def parse_x509(cert: x509.Certificate) -> NiceCertificate:
     )
 
 
-def display(host: str, cert: NiceCertificate) -> None:
+def display(host: str, cert: NiceCertificate, debug) -> None:
     """Print nicely-formatted attributes of a NiceCertificate object"""
     print_items = [
         "issuer",
-        "ca_issuers",
         "subject",
         "subject_alt_name",
         "not_before",
         "not_after",
-        "keytype_and_sig",
+        "public_key_algorithm",
+        "signature_algorithm",
         "key_usage",
         "ext_key_usage",
         "crls",
         "ocsp",
+        "ca_issuers",
         "serial_number",
     ]
 
@@ -171,10 +174,20 @@ def display(host: str, cert: NiceCertificate) -> None:
             elif cert.not_after <= tlsserial.helper.next_90d:
                 warning = f" {red('(expires within 90 days!)')}"
             print(f"{orange(f'{item:<{width}}')} : {cert.not_after}" + warning)
-        elif "keytype_and_sig" == item:
+        elif "public_key_algorithm" == item:
             print(
                 f"{orange(f'{item:<{width}}')} "
-                f": {cert.key_type} {cert.key_bits}bits ({cert.sig_algo}) ({cert.sig_algo_params})"
+                f": {cert.key_type} ({cert.key_bits} bit)"
+            )
+            if debug:
+                print(
+                    f"{orange(f'{item:<{width}}')} "
+                    f": Factors: {cert.key_factors}"
+                )
+        elif "signature_algorithm" == item:
+            print(
+                f"{orange(f'{item:<{width}}')} "
+                f": {cert.sig_algo} params({cert.sig_algo_params})"
             )
         elif "key_usage" in item:
             print(
