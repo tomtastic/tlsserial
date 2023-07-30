@@ -29,20 +29,15 @@ from tlsserial.color import bold, red, orange, blue
     "--url",
     cls=tlsserial.helper.MutuallyExclusiveOption,
     mutually_exclusive=["file"],
-    help="host || host:port || https://host:port/other"
+    help="host || host:port || https://host:port/other",
 )
 @click.option(
     "--file",
     cls=tlsserial.helper.MutuallyExclusiveOption,
     mutually_exclusive=["url"],
-    help="filename containing a PEM certificate"
+    help="filename containing a PEM certificate",
 )
-@click.option(
-    "--debug",
-    is_flag=True,
-    type=bool,
-    default=False
-)
+@click.option("--debug", is_flag=True, type=bool, default=False)
 def main(url, file, debug) -> None:
     """tlsserial groks X509 certificates for your pleasure"""
     level = logging.DEBUG
@@ -64,10 +59,9 @@ def main(url, file, debug) -> None:
         else:
             print(cert[1])
     else:
+        click.echo(f"Library version : {OPENSSL_VERSION}")
         ctx = click.get_current_context()
         click.echo(ctx.get_help())
-
-    #click.echo(f"Library version : {OPENSSL_VERSION}")
 
 
 def get_args(argv: str) -> tuple:
