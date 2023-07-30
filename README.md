@@ -3,6 +3,7 @@
 ## Usage
 
 ```shell
+❯ poetry install
 ❯ poetry run tlsserial
 Usage: tlsserial [OPTIONS]
 
