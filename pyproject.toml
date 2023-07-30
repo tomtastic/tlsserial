@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "tlsserial"
+version = "0.1.0"
+description = "Examine TLS certificates, locally or online"
+authors = ["Tom Matthews <tmatoo@amazon.co.uk>"]
+readme = "README.md"
+
+[tool.poetry.scripts]
+tlsserial = 'tlsserial.cli:main'
+
+[tool.poetry.dependencies]
+python = "^3.8"
+click = "^8.1.6"
+cryptography = "^41.0"
+pendulum = "^2.1.2"
+
+[tool.poetry.group.dev.dependencies]
+types-cryptography = "^3.3.23.2"
+mypy = "^1.4.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
