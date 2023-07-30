@@ -155,18 +155,25 @@ def get_subject(cert: x509.Certificate):
 
 def get_sans(cert: x509.Certificate):
     """The Subject Alternative Names"""
-    sans = cert.extensions.get_extension_for_oid(
-        ExtensionOID.SUBJECT_ALTERNATIVE_NAME
-    ).value.get_values_for_type(DNSName)
+    sans = []
+    try:
+        sans = cert.extensions.get_extension_for_oid(
+            ExtensionOID.SUBJECT_ALTERNATIVE_NAME
+        ).value.get_values_for_type(DNSName)
+    except ExtensionNotFound:
+        pass
     return sans
 
 
 def get_key_usage(cert: x509.Certificate):
     """Key usage"""
     key_usage = []
-    key_usage_object = cert.extensions.get_extension_for_oid(
-        ExtensionOID.KEY_USAGE
-    ).value
+    try:
+        key_usage_object = cert.extensions.get_extension_for_oid(
+            ExtensionOID.KEY_USAGE
+        ).value
+    except ExtensionNotFound:
+        pass
     # <KeyUsage(
     #   digital_signature=True, content_commitment=False, key_encipherment=True,
     #   data_encipherment=False, key_agreement=False, key_cert_sign=False,
@@ -178,7 +185,7 @@ def get_key_usage(cert: x509.Certificate):
             if value is True:
                 # No idea why the names are '_private'?
                 key_usage.append(attr.lstrip("_"))
-    except ValueError:
+    except (UnboundLocalError, ValueError):
         pass
     return key_usage
 
@@ -186,16 +193,19 @@ def get_key_usage(cert: x509.Certificate):
 def get_ext_key_usage(cert: x509.Certificate) -> list:
     """Returns list of Extended key usages"""
     ext_key_usage = []
-    ext_key_usage_object = cert.extensions.get_extension_for_oid(
-        ExtensionOID.EXTENDED_KEY_USAGE
-    ).value
+    try:
+        ext_key_usage_object = cert.extensions.get_extension_for_oid(
+            ExtensionOID.EXTENDED_KEY_USAGE
+        ).value
+    except ExtensionNotFound:
+        pass
     # {'_usages': [
     #   <ObjectIdentifier(oid=1.3.6.1.5.5.7.3.1, name=serverAuth)>,
     #   <ObjectIdentifier(oid=1.3.6.1.5.5.7.3.2, name=clientAuth)> ]}
     try:
         for usage in ext_key_usage_object.__dict__["_usages"]:
             ext_key_usage.append(usage._name)
-    except ValueError:
+    except (UnboundLocalError, ValueError):
         pass
     return ext_key_usage
 
@@ -298,7 +308,7 @@ def get_key_factors(cert: x509.Certificate) -> dict:
 
 def get_sig_algorithm(cert: x509.Certificate):
     if isinstance(cert.signature_hash_algorithm, hashes.HashAlgorithm):
-        sig_algo = cert.signature_hash_algorithm.name.upper()
+        sig_algo = cert.signature_algorithm_oid._name
     else:
         sig_algo = None
     return sig_algo
