@@ -4,7 +4,7 @@ import os
 import socket
 import ssl
 from time import perf_counter
-from typing import Dict  # Lets do static type checking with mypy
+from typing import Dict, List  # Lets do static type checking with mypy
 from click import Option, UsageError
 from cryptography import x509
 from cryptography.x509 import DNSName, ExtensionNotFound
@@ -23,8 +23,6 @@ from cryptography.hazmat.primitives.asymmetric import (
     # x25519,
 )
 import pendulum
-
-debug = False
 
 NAME_ATTRIBS = (
     ("CN", NameOID.COMMON_NAME),
@@ -83,40 +81,60 @@ class MutuallyExclusiveOption(Option):
             args
         )
 
-def get_cert_from_host(host, port=443, timeout=8) -> tuple[None | x509.Certificate, str]:
+def get_certs_from_host(host, port=443, timeout=8) -> tuple[None | List[x509.Certificate], None | List, str]:
     """Use ssl library to get certificate details from a host"""
     """Then use 'cryptography' to parse the certificate and return the ugly X509 object"""
+    """Returns (certificate, certificate chain, return status message)"""
     context = ssl.create_default_context()
+    # We want to retrieve even expired certificates
+    context.check_hostname = False
+    context.verify_mode = ssl.CERT_NONE
     try:
         with socket.create_connection((host, port), timeout) as connection:
             with context.wrap_socket(connection, server_hostname=host) as sock:
+                # FIXME: We really shouldnt use private methods, but
+                # cryptography doesn't expose the certificate chain yet
+                # https://github.com/python/cpython/issues/62433
+                sslobj_verified_chain = sock._sslobj.get_verified_chain()
+                # [<_ssl.Certificate 'CN=expired.rootca1.demo.amazontrust.com'>,
+                #  <_ssl.Certificate 'CN=Amazon RSA 2048 M01,O=Amazon,C=US'>,
+                #  <_ssl.Certificate 'CN=Amazon Root CA 1,O=Amazon,C=US'>]
+                ssl_chain: List = []
+                for _, cert in enumerate(sslobj_verified_chain):
+                    for tup in cert.get_info()['subject']:
+                        # Each Certificate object has a get_info method, which
+                        # returns the subject in an awful tuple of tuples
+                        if tup[0][0] == 'commonName':
+                            common_name_val = f"[CN] {tup[0][1]}"
+                            ssl_chain.append(common_name_val)
                 sock.settimeout(timeout)
                 try:
-                    der_cert = sock.getpeercert(True)
+                    cert_der = sock.getpeercert(binary_form=True)
                 finally:
                     sock.close()
-                if der_cert is None:
-                    return (None, "Failed to get peer certificate!")
+                if cert_der is None:
+                    return (None, None, "Failed to get peer certificate!")
                 else:
-                    cert_pem = ssl.DER_cert_to_PEM_cert(der_cert)
+                    cert_pem = ssl.DER_cert_to_PEM_cert(cert_der)
                     return (
                         # load_certificate takes a bytes object, so encode cert_pem
-                        x509.load_pem_x509_certificate(str.encode(cert_pem)),
+                        x509.load_pem_x509_certificates(str.encode(cert_pem)),
+                        ssl_chain,
                         "SSL certificate"
                     )
     except socket.timeout:
-        return (None, "Socket timeout!")
+        return (None, None, "Socket timeout!")
     except ssl.SSLEOFError:
-        return (None, "SSL EOF error!")
+        return (None, None, "SSL EOF error!")
     except ssl.SSLError as err:
-        return (None, f"{err}")
+        return (None, None, f"{err}")
     except socket.gaierror:
-        return (None, "Socket getaddrinfo() error - Name or service not known!")
+        return (None, None, "Socket getaddrinfo() error - Name or service not known!")
     except ConnectionError:
-        return (None, "Connection error!")
+        return (None, None, "Connection error!")
 
 
-def get_cert_from_file(filename: str, mode="r") -> tuple[None | x509.Certificate, str]:
+def get_certs_from_file(filename: str, mode="r") -> tuple[None | List[x509.Certificate], str]:
     """Use ssl library to get certificate details from disk"""
     """Then use 'cryptography' to parse the certificate and return the ugly X509 object"""
     try:
@@ -124,7 +142,7 @@ def get_cert_from_file(filename: str, mode="r") -> tuple[None | x509.Certificate
         with open(os.path.join(base, filename), mode) as file:
             return (
                 # load_certificate takes a bytes object, so encode cert_pem
-                x509.load_pem_x509_certificate(str.encode(file.read())),
+                x509.load_pem_x509_certificates(str.encode(file.read())),
                 "SSL certificate"
             )
     except ValueError as err:
@@ -133,6 +151,11 @@ def get_cert_from_file(filename: str, mode="r") -> tuple[None | x509.Certificate
         return (None, f"{err}")
     except PermissionError as err:
         return (None, f"{err}")
+
+
+def get_version(cert: x509.Certificate) -> int:
+    """Return the x509 version"""
+    return cert.version.value + 1
 
 
 def get_issuer(cert: x509.Certificate):

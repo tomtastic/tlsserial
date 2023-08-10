@@ -11,6 +11,7 @@ class NiceCertificate:
     sort_index: datetime = field(init=False, repr=False)
     not_after: datetime
     not_before: datetime
+    chain: list = field(default_factory=list)
     issuer: list = field(default_factory=list)
     subject: list = field(default_factory=list)
     sans: list = field(default_factory=list)
@@ -24,7 +25,7 @@ class NiceCertificate:
     # Of vague interest
     key_usage: list = field(default_factory=list)
     ext_key_usage: list = field(default_factory=list)
-    version: None | x509.Version = field(repr=True, default=None)
+    version: None | int = field(repr=True, default=None)
     key_type: None | str = field(default=None)
     key_bits: None | int = field(default=None)
     sig_algo: None | str = field(default=None)

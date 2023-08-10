@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """ grab some things from a TLS cert """
 # TODO:
-# - Show version, dont try extensions if not 3
+# - Report TLS1.3 negotiation for url lookups as NIST SP 800-52 requires support by Jan 2024
+# - Swap back to the pyOpenSSL lib to allow getting entire chain from a host?
+#   - No need, we can use a private method from ssl
+# - Show the SHA-256 hash of the subject Public Key Information
 # - Clearly show SANs with specifier, eg.
 #     DNS:*.axiom-partners.com
 # - Show v3 basic constraints, eg. CA / critical
-# - Show the full certificate chain
 # - Compare against INTB (and others) cipher suite?
+#   NB: Committee on National Security Systems Instruction (CNSSI) 1253 Intelligence Overlay B (INT-B)
+#   NB: INT-A for the least sensitive data through INT-C for the most sensitive data
+#   https://w.amazon.com/bin/view/DedicatedCloudSolutions/ACDteam/ACDPrograms/Topaz/int-b/guide/
+#   NB: CNSA: The algorithm is recommended by NSA (Commercial National Security Algorithm (CNSA) Suite formerly NSA's Suite B program).
 #   - Clarify ciphers in use
 #     eg.
 #       - peer signing digest
@@ -48,18 +54,28 @@ def main(url, file, debug) -> None:
 
     if url:
         host, port = get_args(url)
-        cert = tlsserial.helper.get_cert_from_host(host, port)
-        if cert[0] is not None:
-            display(host, parse_x509(cert[0]), debug)
+        # Assigns all certificates found to tuple cert([c1, c2, ...], cert_chain, "SSL cert")
+        bundle = tlsserial.helper.get_certs_from_host(host, port)
+        certs = bundle[0]
+        cert_chain = bundle[1]
+        status = bundle[2]
+        if certs is not None:
+            for cert in reversed(certs):
+                display(host, parse_x509(cert, cert_chain), debug)
         else:
-            print(cert[1])
+            print(status)
     elif file:
         host = ""
-        cert = tlsserial.helper.get_cert_from_file(file)
-        if cert[0] is not None:
-            display(host, parse_x509(cert[0]), debug)
+        # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
+        bundle = tlsserial.helper.get_certs_from_file(file)
+        certs = bundle[0]
+        status = bundle[1]
+        if certs is not None:
+            for cert in reversed(certs):
+                display(host, parse_x509(cert, []), debug)
+                click.echo("")
         else:
-            print(cert[1])
+            print(status)
     else:
         click.echo(f"Library version : {OPENSSL_VERSION}")
         ctx = click.get_current_context()
@@ -84,7 +100,7 @@ def get_args(argv: str) -> tuple:
     sys.exit(1)
 
 
-def parse_x509(cert: x509.Certificate) -> NiceCertificate:
+def parse_x509(cert: x509.Certificate, cert_chain: list) -> NiceCertificate:
     """Parse an ugly X509 object"""
     """Return a NiceCertificate object """
 
@@ -94,6 +110,8 @@ def parse_x509(cert: x509.Certificate) -> NiceCertificate:
 
     return NiceCertificate(
         # We use helper functions where parsing is gnarly
+        version=tlsserial.helper.get_version(cert),
+        chain=cert_chain,
         issuer=tlsserial.helper.get_issuer(cert),
         ca_issuers=ca_issuers,
         subject=tlsserial.helper.get_subject(cert),
@@ -105,7 +123,6 @@ def parse_x509(cert: x509.Certificate) -> NiceCertificate:
         crls=tlsserial.helper.get_crls(cert),
         ocsp=ocsp,
         serial_as_int=cert.serial_number,
-        version=cert.version,
         key_type=tlsserial.helper.get_key_type(cert),
         key_bits=tlsserial.helper.get_key_bits(cert),
         key_factors=tlsserial.helper.get_key_factors(cert),
@@ -114,9 +131,10 @@ def parse_x509(cert: x509.Certificate) -> NiceCertificate:
     )
 
 
-def display(host: str, cert: NiceCertificate, debug) -> None:
+def display(host: str, cert: NiceCertificate, debug: bool) -> None:
     """Print nicely-formatted attributes of a NiceCertificate object"""
     print_items = [
+        "version",
         "issuer",
         "subject",
         "subject_alt_name",
@@ -129,6 +147,7 @@ def display(host: str, cert: NiceCertificate, debug) -> None:
         "crls",
         "ocsp",
         "ca_issuers",
+        "chain",
         "serial_number",
     ]
 
@@ -137,6 +156,9 @@ def display(host: str, cert: NiceCertificate, debug) -> None:
     for item in print_items:
         if "issuer" == item:
             print(f"{orange(f'{item:<{width}}')} : {' '.join(cert.issuer)}")
+        elif "chain" == item:
+            if len(cert.__getattribute__(item)) > 0:
+                print(f"{orange(f'{item:<{width}}')} " f": {orange(' » ').join(cert.__getattribute__(item))}")
         elif "subject" == item:
             cert.subject = [
                 f"{c[:5]}{bold(blue(c[5:]))}" if c.endswith(f" {host}") else c
