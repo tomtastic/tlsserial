@@ -7,7 +7,6 @@
 # - Show the SHA-256 hash of the subject Public Key Information
 # - Clearly show SANs with specifier, eg.
 #     DNS:*.axiom-partners.com
-# - Show v3 basic constraints, eg. CA / critical
 # - Compare against INTB (and others) cipher suite?
 #   NB: Committee on National Security Systems Instruction (CNSSI) 1253 Intelligence Overlay B (INT-B)
 #   NB: INT-A for the least sensitive data through INT-C for the most sensitive data
@@ -54,28 +53,23 @@ def main(url, file, debug) -> None:
 
     if url:
         host, port = get_args(url)
-        # Assigns all certificates found to tuple cert([c1, c2, ...], cert_chain, "SSL cert")
-        bundle = tlsserial.helper.get_certs_from_host(host, port)
-        certs = bundle[0]
-        cert_chain = bundle[1]
-        status = bundle[2]
-        if certs is not None:
-            for cert in reversed(certs):
-                display(host, parse_x509(cert, cert_chain), debug)
+        # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
+        cert_chain = tlsserial.helper.get_certs_from_host(host, port)
+        if cert_chain[0] is not None:
+            for cert in reversed(cert_chain[0]):
+                display(host, parse_x509(cert), debug)
         else:
-            print(status)
+            print(cert_chain[1])
     elif file:
         host = ""
         # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
-        bundle = tlsserial.helper.get_certs_from_file(file)
-        certs = bundle[0]
-        status = bundle[1]
-        if certs is not None:
-            for cert in reversed(certs):
-                display(host, parse_x509(cert, []), debug)
+        cert_chain = tlsserial.helper.get_certs_from_file(file)
+        if cert_chain[0] is not None:
+            for cert in reversed(cert_chain[0]):
+                display(host, parse_x509(cert), debug)
                 click.echo("")
         else:
-            print(status)
+            print(cert_chain[1])
     else:
         click.echo(f"Library version : {OPENSSL_VERSION}")
         ctx = click.get_current_context()
@@ -100,7 +94,7 @@ def get_args(argv: str) -> tuple:
     sys.exit(1)
 
 
-def parse_x509(cert: x509.Certificate, cert_chain: list) -> NiceCertificate:
+def parse_x509(cert: x509.Certificate) -> NiceCertificate:
     """Parse an ugly X509 object"""
     """Return a NiceCertificate object """
 
@@ -111,11 +105,11 @@ def parse_x509(cert: x509.Certificate, cert_chain: list) -> NiceCertificate:
     return NiceCertificate(
         # We use helper functions where parsing is gnarly
         version=tlsserial.helper.get_version(cert),
-        chain=cert_chain,
         issuer=tlsserial.helper.get_issuer(cert),
         ca_issuers=ca_issuers,
         subject=tlsserial.helper.get_subject(cert),
         sans=tlsserial.helper.get_sans(cert),
+        basic_constraints=tlsserial.helper.get_basic_constraints(cert),
         key_usage=tlsserial.helper.get_key_usage(cert),
         ext_key_usage=tlsserial.helper.get_ext_key_usage(cert),
         not_before=notBefore,
@@ -138,6 +132,7 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
         "issuer",
         "subject",
         "subject_alt_name",
+        "basic_constraints",
         "not_before",
         "not_after",
         "public_key_algorithm",
@@ -180,6 +175,15 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
                     print(f"{orange(f'{item:<{width}}')} " f": {orange(san)}")
                 else:
                     print(f"{orange(f'{item:<{width}}')} " f": {san}")
+        elif "basic_constraints" == item:
+            # Lets highlight any certs which are CAs
+            if cert.basic_constraints['ca'] == 'True':
+                cert.basic_constraints['ca'] = orange('True')
+            for item in ['ca', 'path_length']:
+                print(
+                    f"{orange(f'{item:<{width}}')} "
+                    f": {cert.basic_constraints[item]}"
+                )
         elif "serial_number" == item:
             print(
                 f"{orange(f'{item:<{width}}')} "

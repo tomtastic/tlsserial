@@ -81,7 +81,7 @@ class MutuallyExclusiveOption(Option):
             args
         )
 
-def get_certs_from_host(host, port=443, timeout=8) -> tuple[None | List[x509.Certificate], None | List, str]:
+def get_certs_from_host(host, port=443, timeout=8) -> tuple[None | List[x509.Certificate], str]:
     """Use ssl library to get certificate details from a host"""
     """Then use 'cryptography' to parse the certificate and return the ugly X509 object"""
     """Returns (certificate, certificate chain, return status message)"""
@@ -113,7 +113,7 @@ def get_certs_from_host(host, port=443, timeout=8) -> tuple[None | List[x509.Cer
                 finally:
                     sock.close()
                 if cert_der is None:
-                    return (None, None, "Failed to get peer certificate!")
+                    return (None, "Failed to get peer certificate!")
                 else:
                     cert_pem = ssl.DER_cert_to_PEM_cert(cert_der)
                     return (
@@ -186,6 +186,26 @@ def get_sans(cert: x509.Certificate):
     except ExtensionNotFound:
         pass
     return sans
+
+
+def get_basic_constraints(cert: x509.Certificate):
+    """Return the CA BasicConstraint properties"""
+    basic_constraints: Dict[str, str] = {}
+    basic_constraints['ca'] = ""
+    basic_constraints['path_length'] = ""
+    try:
+        basic_constraints_object = cert.extensions.get_extension_for_oid(
+            ExtensionOID.BASIC_CONSTRAINTS
+        ).value
+        # <BasicConstraints( ca=True, path_length=None )
+    except (ValueError, ExtensionNotFound):
+        pass
+    try:
+        basic_constraints['ca'] = str(basic_constraints_object.ca)
+        basic_constraints['path_length'] = str(basic_constraints_object.path_length)
+    except (ValueError, ExtensionNotFound):
+        pass
+    return basic_constraints
 
 
 def get_key_usage(cert: x509.Certificate):

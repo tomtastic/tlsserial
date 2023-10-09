@@ -23,6 +23,7 @@ class NiceCertificate:
     serial_as_hex_sep_colon: str = field(init=False, repr=False)  # 07:5B:CD:15
     serial_as_hex_sep_space: str = field(init=False, repr=False)  #   075B CD15
     # Of vague interest
+    basic_constraints: dict = field(repr=True, default_factory=dict)
     key_usage: list = field(default_factory=list)
     ext_key_usage: list = field(default_factory=list)
     version: None | int = field(repr=True, default=None)
