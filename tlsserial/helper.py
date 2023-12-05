@@ -40,18 +40,17 @@ next_90d = today + pendulum.duration(days=90)
 
 def timethis(func):
     """Sample decorator to report a function runtime in milliseconds"""
-    """*** Warning ***"""
-    """FIXME: Decorating some functions causes them to return NoneType"""
 
     def wrapper(*args, **kwargs):
         # Make sure we accept any number of args / keyword args
         time_before = perf_counter()
-        func(*args, **kwargs)
+        retval = func(*args, **kwargs)
         time_after = perf_counter()
         time_diff = time_after - time_before
         if debug:
             # __qualname__ returns the name of the func passed in
             logging.info(f"({func.__qualname__}) took {time_diff:.3f} seconds")
+        return retval
 
     return wrapper
 
@@ -203,7 +202,7 @@ def get_basic_constraints(cert: x509.Certificate):
     try:
         basic_constraints['ca'] = str(basic_constraints_object.ca)
         basic_constraints['path_length'] = str(basic_constraints_object.path_length)
-    except (ValueError, ExtensionNotFound):
+    except (ValueError, ExtensionNotFound, UnboundLocalError):
         pass
     return basic_constraints
 
