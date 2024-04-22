@@ -25,22 +25,22 @@ from ssl import OPENSSL_VERSION
 import click
 from cryptography import x509
 
-import tlsserial.helper
-from tlsserial.nice_certificate import NiceCertificate
-from tlsserial.color import bold, red, orange, blue
+from lib import helper
+from lib.nice_certificate import NiceCertificate
+from lib.color import bold, red, orange, blue
 
 
 # https://click.palletsprojects.com/en/8.1.x/quickstart/
 @click.command()
 @click.option(
     "--url",
-    cls=tlsserial.helper.MutuallyExclusiveOption,
+    cls=helper.MutuallyExclusiveOption,
     mutually_exclusive=["file"],
     help="host || host:port || https://host:port/other",
 )
 @click.option(
     "--file",
-    cls=tlsserial.helper.MutuallyExclusiveOption,
+    cls=helper.MutuallyExclusiveOption,
     mutually_exclusive=["url"],
     help="filename containing a PEM certificate",
 )
@@ -54,7 +54,7 @@ def main(url, file, debug) -> None:
     if url:
         host, port = get_args(url)
         # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
-        cert_chain = tlsserial.helper.get_certs_from_host(host, port)
+        cert_chain = helper.get_certs_from_host(host, port)
         if cert_chain[0] is not None:
             for cert in reversed(cert_chain[0]):
                 display(host, parse_x509(cert), debug)
@@ -63,7 +63,7 @@ def main(url, file, debug) -> None:
     elif file:
         host = ""
         # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
-        cert_chain = tlsserial.helper.get_certs_from_file(file)
+        cert_chain = helper.get_certs_from_file(file)
         if cert_chain[0] is not None:
             for cert in reversed(cert_chain[0]):
                 display(host, parse_x509(cert), debug)
@@ -99,29 +99,29 @@ def parse_x509(cert: x509.Certificate) -> NiceCertificate:
     """Return a NiceCertificate object """
 
     # We use helper functions where parsing is gnarly
-    notBefore, notAfter = tlsserial.helper.get_before_and_after(cert)
-    ocsp, ca_issuers = tlsserial.helper.get_ocsp_and_caissuer(cert)
+    notBefore, notAfter = helper.get_before_and_after(cert)
+    ocsp, ca_issuers = helper.get_ocsp_and_caissuer(cert)
 
     return NiceCertificate(
         # We use helper functions where parsing is gnarly
-        version=tlsserial.helper.get_version(cert),
-        issuer=tlsserial.helper.get_issuer(cert),
+        version=helper.get_version(cert),
+        issuer=helper.get_issuer(cert),
         ca_issuers=ca_issuers,
-        subject=tlsserial.helper.get_subject(cert),
-        sans=tlsserial.helper.get_sans(cert),
-        basic_constraints=tlsserial.helper.get_basic_constraints(cert),
-        key_usage=tlsserial.helper.get_key_usage(cert),
-        ext_key_usage=tlsserial.helper.get_ext_key_usage(cert),
+        subject=helper.get_subject(cert),
+        sans=helper.get_sans(cert),
+        basic_constraints=helper.get_basic_constraints(cert),
+        key_usage=helper.get_key_usage(cert),
+        ext_key_usage=helper.get_ext_key_usage(cert),
         not_before=notBefore,
         not_after=notAfter,
-        crls=tlsserial.helper.get_crls(cert),
+        crls=helper.get_crls(cert),
         ocsp=ocsp,
         serial_as_int=cert.serial_number,
-        key_type=tlsserial.helper.get_key_type(cert),
-        key_bits=tlsserial.helper.get_key_bits(cert),
-        key_factors=tlsserial.helper.get_key_factors(cert),
-        sig_algo=tlsserial.helper.get_sig_algorithm(cert),
-        sig_algo_params=tlsserial.helper.get_sig_algorithm_params(cert),
+        key_type=helper.get_key_type(cert),
+        key_bits=helper.get_key_bits(cert),
+        key_factors=helper.get_key_factors(cert),
+        sig_algo=helper.get_sig_algorithm(cert),
+        sig_algo_params=helper.get_sig_algorithm_params(cert),
     )
 
 
@@ -191,13 +191,13 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
             )
         elif "not_after" == item:
             warning = ""
-            if cert.not_after <= tlsserial.helper.today:
+            if cert.not_after <= helper.today:
                 warning = f" {red('(expired!)')}"
-            elif cert.not_after <= tlsserial.helper.next_14d:
+            elif cert.not_after <= helper.next_14d:
                 warning = f" {red('(expires within 14 days!)')}"
-            elif cert.not_after <= tlsserial.helper.next_30d:
+            elif cert.not_after <= helper.next_30d:
                 warning = f" {red('(expires within 30 days!)')}"
-            elif cert.not_after <= tlsserial.helper.next_90d:
+            elif cert.not_after <= helper.next_90d:
                 warning = f" {red('(expires within 90 days!)')}"
             print(f"{orange(f'{item:<{width}}')} : {cert.not_after}" + warning)
         elif "public_key_algorithm" == item:
@@ -225,4 +225,4 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
 
 
 if __name__ == "__main__":
-    cli()
+    main()
