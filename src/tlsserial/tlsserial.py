@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""grab some things from a TLS cert"""
-
+""" grab some things from a TLS cert"""
 # TODO:
 # - Report TLS1.3 negotiation for url lookups as NIST SP 800-52 requires support by Jan 2024
 # - Swap back to the pyOpenSSL lib to allow getting entire chain from a host?
@@ -18,10 +17,8 @@
 #       - server temp keys
 #       - server public keys
 #       - TLS cipher?
-import logging
 import re
 import sys
-from ssl import OPENSSL_VERSION
 import click
 from cryptography import x509
 
@@ -30,53 +27,35 @@ from .nice_certificate import NiceCertificate
 from .color import bold, red, orange, blue
 
 
-# https://click.palletsprojects.com/en/8.1.x/quickstart/
-@click.command()
-@click.option(
-    "--url",
-    cls=helper.MutuallyExclusiveOption,
-    mutually_exclusive=["file"],
-    help="host || host:port || https://host:port/other",
-)
-@click.option(
-    "--file",
-    cls=helper.MutuallyExclusiveOption,
-    mutually_exclusive=["url"],
-    help="filename containing a PEM certificate",
-)
-@click.option("--debug", is_flag=True, type=bool, default=False)
-def main(url, file, debug) -> None:
-    """tlsserial groks X509 certificates for your pleasure"""
-    level = logging.DEBUG
-    fmt = "[%(levelname)s] %(asctime)s - %(message)s"
-    logging.basicConfig(level=level, format=fmt)
-
-    if url:
+def handle_url(url: str, verbose: bool = False) -> None:
+    try:
         host, port = get_args(url)
-        # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
-        cert_chain = helper.get_certs_from_host(host, port)
-        if cert_chain[0] is not None:
-            for cert in reversed(cert_chain[0]):
-                display(host, parse_x509(cert), debug)
-        else:
-            print(cert_chain[1])
-    elif file:
-        host = ""
-        # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
-        cert_chain = helper.get_certs_from_file(file)
-        if cert_chain[0] is not None:
-            for cert in reversed(cert_chain[0]):
-                display(host, parse_x509(cert), debug)
-                click.echo("")
-        else:
-            print(cert_chain[1])
+    except ValueError as err:
+        print(err)
+        sys.exit(1)
+    # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
+    cert_chain = helper.get_certs_from_host(host, port)
+    if cert_chain[0] is not None:
+        for cert in reversed(cert_chain[0]):
+            display(host, parse_x509(cert), verbose)
     else:
-        click.echo(f"Library version : {OPENSSL_VERSION}")
-        ctx = click.get_current_context()
-        click.echo(ctx.get_help())
+        print(cert_chain[1])
+
+
+def handle_file(file: str, verbose: bool = False) -> None:
+    host = ""
+    # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
+    cert_chain = helper.get_certs_from_file(file)
+    if cert_chain[0] is not None:
+        for cert in reversed(cert_chain[0]):
+            display(host, parse_x509(cert), verbose)
+            click.echo("")
+    else:
+        print(cert_chain[1])
 
 
 def get_args(argv: str) -> tuple:
+    # TODO: https://docs.python.org/3/library/urllib.parse.html#url-parsing
     """
     Try to extract a hostname and port from input string
     Returns a tuple of (host, port)
@@ -90,8 +69,7 @@ def get_args(argv: str) -> tuple:
                     return (args_matched[1], args_matched[2])
                 # host and default port
                 return (args_matched[1], 443)
-    print(f"Error parsing the input : {argv}")
-    sys.exit(1)
+    raise ValueError(f"Error parsing the input : {argv}")
 
 
 def parse_x509(cert: x509.Certificate) -> NiceCertificate:
@@ -221,7 +199,3 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
             )
         else:
             print(f"{orange(f'{item:<{width}}')} " f": {cert.__getattribute__(item)}")
-
-
-if __name__ == "__main__":
-    main()
