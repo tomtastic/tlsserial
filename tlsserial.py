@@ -10,7 +10,6 @@
 # - Compare against INTB (and others) cipher suite?
 #   NB: Committee on National Security Systems Instruction (CNSSI) 1253 Intelligence Overlay B (INT-B)
 #   NB: INT-A for the least sensitive data through INT-C for the most sensitive data
-#   https://w.amazon.com/bin/view/DedicatedCloudSolutions/ACDteam/ACDPrograms/Topaz/int-b/guide/
 #   NB: CNSA: The algorithm is recommended by NSA (Commercial National Security Algorithm (CNSA) Suite formerly NSA's Suite B program).
 #   - Clarify ciphers in use
 #     eg.
