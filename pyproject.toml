@@ -16,8 +16,17 @@ pendulum = "^3.0"
 
 [tool.poetry.group.dev.dependencies]
 types-cryptography = "^3.3.23.2"
-mypy = "^1.4.1"
+mypy = "*"
+ruff = "*"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff]
+
+
+[tool.ruff.lint.per-file-ignores]
+#"__init__.py" = ["E402"] # ignore import errors in all __init__.py files
+"**/{tests,docs,tools}/*" = ["E402"] # ignore import errors in selected subdirectories.

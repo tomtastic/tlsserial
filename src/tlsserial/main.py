@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-""" grab some things from a TLS cert """
+"""grab some things from a TLS cert"""
+
 # TODO:
 # - Report TLS1.3 negotiation for url lookups as NIST SP 800-52 requires support by Jan 2024
 # - Swap back to the pyOpenSSL lib to allow getting entire chain from a host?
@@ -152,7 +153,10 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
             print(f"{orange(f'{item:<{width}}')} : {' '.join(cert.issuer)}")
         elif "chain" == item:
             if len(cert.__getattribute__(item)) > 0:
-                print(f"{orange(f'{item:<{width}}')} " f": {orange(' » ').join(cert.__getattribute__(item))}")
+                print(
+                    f"{orange(f'{item:<{width}}')} "
+                    f": {orange(' » ').join(cert.__getattribute__(item))}"
+                )
         elif "subject" == item:
             cert.subject = [
                 f"{c[:5]}{bold(blue(c[5:]))}" if c.endswith(f" {host}") else c
@@ -176,12 +180,11 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
                     print(f"{orange(f'{item:<{width}}')} " f": {san}")
         elif "basic_constraints" == item:
             # Lets highlight any certs which are CAs
-            if cert.basic_constraints['ca'] == 'True':
-                cert.basic_constraints['ca'] = orange('True')
-            for item in ['ca', 'path_length']:
+            if cert.basic_constraints["ca"] == "True":
+                cert.basic_constraints["ca"] = orange("True")
+            for item in ["ca", "path_length"]:
                 print(
-                    f"{orange(f'{item:<{width}}')} "
-                    f": {cert.basic_constraints[item]}"
+                    f"{orange(f'{item:<{width}}')} " f": {cert.basic_constraints[item]}"
                 )
         elif "serial_number" == item:
             print(
@@ -205,10 +208,7 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
                 f": {cert.key_type} ({cert.key_bits} bit)"
             )
             if debug:
-                print(
-                    f"{orange(f'{item:<{width}}')} "
-                    f": Factors: {cert.key_factors}"
-                )
+                print(f"{orange(f'{item:<{width}}')} " f": Factors: {cert.key_factors}")
         elif "signature_algorithm" == item:
             print(
                 f"{orange(f'{item:<{width}}')} "

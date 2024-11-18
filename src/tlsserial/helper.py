@@ -1,4 +1,5 @@
-""" Helper functions to parse pypy cryptography x509 objects """
+"""Helper functions to parse pypy cryptography x509 objects"""
+
 import logging
 import os
 import socket
@@ -54,14 +55,17 @@ def timethis(func):
 
     return wrapper
 
+
 class MutuallyExclusiveOption(Option):
     def __init__(self, *args, **kwargs):
-        self.mutually_exclusive = set(kwargs.pop('mutually_exclusive', []))
-        help = kwargs.get('help', '')
+        self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
+        help = kwargs.get("help", "")
         if self.mutually_exclusive:
-            ex_str = ', '.join(self.mutually_exclusive)
-            kwargs['help'] = help + (
-                ' NOTE: This argument is mutually exclusive with arguments: [' + ex_str + '].'
+            ex_str = ", ".join(self.mutually_exclusive)
+            kwargs["help"] = help + (
+                " NOTE: This argument is mutually exclusive with arguments: ["
+                + ex_str
+                + "]."
             )
         super(MutuallyExclusiveOption, self).__init__(*args, **kwargs)
 
@@ -69,18 +73,16 @@ class MutuallyExclusiveOption(Option):
         if self.mutually_exclusive.intersection(opts) and self.name in opts:
             raise UsageError(
                 "Illegal usage: `{}` is mutually exclusive with arguments `{}`.".format(
-                    self.name,
-                    ', '.join(self.mutually_exclusive)
+                    self.name, ", ".join(self.mutually_exclusive)
                 )
             )
 
-        return super(MutuallyExclusiveOption, self).handle_parse_result(
-            ctx,
-            opts,
-            args
-        )
+        return super(MutuallyExclusiveOption, self).handle_parse_result(ctx, opts, args)
 
-def get_certs_from_host(host, port=443, timeout=8) -> tuple[None | List[x509.Certificate], str]:
+
+def get_certs_from_host(
+    host, port=443, timeout=8
+) -> tuple[None | List[x509.Certificate], str]:
     """Use ssl library to get certificate details from a host"""
     """Then use 'cryptography' to parse the certificate and return the ugly X509 object"""
     """Returns (certificate, certificate chain, return status message)"""
@@ -100,10 +102,10 @@ def get_certs_from_host(host, port=443, timeout=8) -> tuple[None | List[x509.Cer
                 #  <_ssl.Certificate 'CN=Amazon Root CA 1,O=Amazon,C=US'>]
                 ssl_chain: List = []
                 for _, cert in enumerate(sslobj_verified_chain):
-                    for tup in cert.get_info()['subject']:
+                    for tup in cert.get_info()["subject"]:
                         # Each Certificate object has a get_info method, which
                         # returns the subject in an awful tuple of tuples
-                        if tup[0][0] == 'commonName':
+                        if tup[0][0] == "commonName":
                             common_name_val = f"[CN] {tup[0][1]}"
                             ssl_chain.append(common_name_val)
                 sock.settimeout(timeout)
@@ -119,7 +121,7 @@ def get_certs_from_host(host, port=443, timeout=8) -> tuple[None | List[x509.Cer
                         # load_certificate takes a bytes object, so encode cert_pem
                         x509.load_pem_x509_certificates(str.encode(cert_pem)),
                         ssl_chain,
-                        "SSL certificate"
+                        "SSL certificate",
                     )
     except socket.timeout:
         return (None, None, "Socket timeout!")
@@ -133,7 +135,9 @@ def get_certs_from_host(host, port=443, timeout=8) -> tuple[None | List[x509.Cer
         return (None, None, "Connection error!")
 
 
-def get_certs_from_file(filename: str, mode="r") -> tuple[None | List[x509.Certificate], str]:
+def get_certs_from_file(
+    filename: str, mode="r"
+) -> tuple[None | List[x509.Certificate], str]:
     """Use ssl library to get certificate details from disk"""
     """Then use 'cryptography' to parse the certificate and return the ugly X509 object"""
     try:
@@ -142,7 +146,7 @@ def get_certs_from_file(filename: str, mode="r") -> tuple[None | List[x509.Certi
             return (
                 # load_certificate takes a bytes object, so encode cert_pem
                 x509.load_pem_x509_certificates(str.encode(file.read())),
-                "SSL certificate"
+                "SSL certificate",
             )
     except ValueError as err:
         return (None, f"{err}")
@@ -190,8 +194,8 @@ def get_sans(cert: x509.Certificate):
 def get_basic_constraints(cert: x509.Certificate):
     """Return the CA BasicConstraint properties"""
     basic_constraints: Dict[str, str] = {}
-    basic_constraints['ca'] = ""
-    basic_constraints['path_length'] = ""
+    basic_constraints["ca"] = ""
+    basic_constraints["path_length"] = ""
     try:
         basic_constraints_object = cert.extensions.get_extension_for_oid(
             ExtensionOID.BASIC_CONSTRAINTS
@@ -200,8 +204,8 @@ def get_basic_constraints(cert: x509.Certificate):
     except (ValueError, ExtensionNotFound):
         pass
     try:
-        basic_constraints['ca'] = str(basic_constraints_object.ca)
-        basic_constraints['path_length'] = str(basic_constraints_object.path_length)
+        basic_constraints["ca"] = str(basic_constraints_object.ca)
+        basic_constraints["path_length"] = str(basic_constraints_object.path_length)
     except (ValueError, ExtensionNotFound, UnboundLocalError):
         pass
     return basic_constraints
@@ -348,6 +352,7 @@ def get_key_factors(cert: x509.Certificate) -> dict:
         key_factors["y"] = public_key.public_numbers().y
     return key_factors
 
+
 def get_sig_algorithm(cert: x509.Certificate):
     if isinstance(cert.signature_hash_algorithm, hashes.HashAlgorithm):
         sig_algo = cert.signature_algorithm_oid._name
@@ -369,4 +374,3 @@ def get_sig_algorithm_params(cert: x509.Certificate) -> str:
             return "n/a"
     except AttributeError:
         return "n/a"
-

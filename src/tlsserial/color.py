@@ -1,4 +1,5 @@
-""" Colour functions for wrapping strings """
+"""Colour functions for wrapping strings"""
+
 from sys import __stdin__, __stdout__
 
 # Styles
