@@ -2,7 +2,7 @@
 name = "tlsserial"
 version = "0.1.0"
 description = "Examine TLS certificates, locally or online"
-authors = ["Tom Matthews <tmatoo@amazon.co.uk>"]
+authors = ["Tom Matthews <anon@pseudo.url>"]
 readme = "README.md"
 
 [tool.poetry.scripts]
