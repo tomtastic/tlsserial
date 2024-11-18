@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from cryptography import x509
 
 
 @dataclass(order=True)
