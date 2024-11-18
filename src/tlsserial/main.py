@@ -24,9 +24,9 @@ from ssl import OPENSSL_VERSION
 import click
 from cryptography import x509
 
-from lib import helper
-from lib.nice_certificate import NiceCertificate
-from lib.color import bold, red, orange, blue
+from . import helper
+from .nice_certificate import NiceCertificate
+from .color import bold, red, orange, blue
 
 
 # https://click.palletsprojects.com/en/8.1.x/quickstart/

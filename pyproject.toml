@@ -6,7 +6,7 @@ authors = ["Tom Matthews <anon@pseudo.url>"]
 readme = "README.md"
 
 [tool.poetry.scripts]
-tlsserial = 'tlsserial:main'
+tlsserial = 'tlsserial.main:main'
 
 [tool.poetry.dependencies]
 python = "^3.11"
