@@ -28,6 +28,9 @@ from .color import bold, red, orange, blue
 
 
 def handle_url(url: str, verbose: bool = False) -> None:
+    """
+    host || host:port || https://host:port/other
+    """
     try:
         host, port = get_args(url)
     except ValueError as err:
@@ -43,6 +46,9 @@ def handle_url(url: str, verbose: bool = False) -> None:
 
 
 def handle_file(file: str, verbose: bool = False) -> None:
+    """ 
+    filename containing a PEM certificate
+    """
     host = ""
     # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
     cert_chain = helper.get_certs_from_file(file)
@@ -73,11 +79,12 @@ def get_args(argv: str) -> tuple:
 
 
 def parse_x509(cert: x509.Certificate) -> NiceCertificate:
-    """Parse an ugly X509 object"""
-    """Return a NiceCertificate object """
+    """ Parse an ugly X509 object
+    Return a NiceCertificate object 
+    """
 
     # We use helper functions where parsing is gnarly
-    notBefore, notAfter = helper.get_before_and_after(cert)
+    not_before, not_after = helper.get_before_and_after(cert)
     ocsp, ca_issuers = helper.get_ocsp_and_caissuer(cert)
 
     return NiceCertificate(
@@ -90,8 +97,8 @@ def parse_x509(cert: x509.Certificate) -> NiceCertificate:
         basic_constraints=helper.get_basic_constraints(cert),
         key_usage=helper.get_key_usage(cert),
         ext_key_usage=helper.get_ext_key_usage(cert),
-        not_before=notBefore,
-        not_after=notAfter,
+        not_before=not_before,
+        not_after=not_after,
         crls=helper.get_crls(cert),
         ocsp=ocsp,
         serial_as_int=cert.serial_number,

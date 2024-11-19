@@ -40,6 +40,7 @@ next_90d = today + pendulum.duration(days=90)
 
 
 def timethis(func):
+    # TODO: If you are only going to log when debugging then dont do any calculations unless you are debugging
     """Sample decorator to report a function runtime in milliseconds"""
 
     def wrapper(*args, **kwargs):
@@ -57,6 +58,7 @@ def timethis(func):
 
 
 class MutuallyExclusiveOption(Option):
+    # TODO: This should be with the CLI code
     def __init__(self, *args, **kwargs):
         self.mutually_exclusive = set(kwargs.pop("mutually_exclusive", []))
         help = kwargs.get("help", "")
@@ -83,6 +85,7 @@ class MutuallyExclusiveOption(Option):
 def get_certs_from_host(
     host, port=443, timeout=8
 ) -> tuple[None | List[x509.Certificate], str]:
+    # TODO: https://peps.python.org/pep-0257/#multi-line-docstrings
     """Use ssl library to get certificate details from a host"""
     """Then use 'cryptography' to parse the certificate and return the ugly X509 object"""
     """Returns (certificate, certificate chain, return status message)"""
@@ -138,8 +141,8 @@ def get_certs_from_host(
 def get_certs_from_file(
     filename: str, mode="r"
 ) -> tuple[None | List[x509.Certificate], str]:
-    """Use ssl library to get certificate details from disk"""
-    """Then use 'cryptography' to parse the certificate and return the ugly X509 object"""
+    """Use ssl library to get certificate details from disk
+    Then use 'cryptography' to parse the certificate and return the ugly X509 object"""
     try:
         base = os.path.dirname(__file__)
         with open(os.path.join(base, filename), mode) as file:
