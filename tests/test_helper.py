@@ -1,7 +1,7 @@
-import pytest
 from unittest import mock
 
 from tlsserial import helper
+from cryptography.hazmat.primitives.asymmetric import padding
 
 
 def test_timethis():
@@ -48,22 +48,6 @@ def test_get_certs_from_file_failure(mock_open):
     assert certs is None
     assert msg == "Error"
 
-    
-@pytest.mark.parametrize(
-    "input_str, expected",
-    [
-        ("example.com", ("example.com", 443)),
-        ("example.com:8080", ("example.com", "8080")),
-    ],
-)
-def test_get_args_success(input_str, expected):
-    assert helper.get_args(input_str) == expected
-
-
-def test_get_args_failure():
-    with pytest.raises(SystemExit):
-        helper.get_args("invalid input")
-
 
 def test_get_version():
     cert = mock.MagicMock()
@@ -101,7 +85,8 @@ def test_get_basic_constraints():
 def test_get_key_usage():
     cert = mock.MagicMock()
     cert.extensions.getextension_for_oid.return_value.value.__dict__ = {
-        "_digital_signature": True    }
+        "_digital_signature": True
+    }
     assert helper.get_key_usage(cert) == ["digital_signature"]
 
 
@@ -140,8 +125,12 @@ def test_get_crls():
 def test_get_ocsp_and_caissuer():
     cert = mock.MagicMock()
     cert.extensions.get_extension_for_oid.return_value.value = [mock.MagicMock()]
-    cert.extensions.get_extension_for_oid.return_value.value[0].access_method._name = "OCSP"
-    cert.extensions.get_extension_for_oid.return_value.value[0].access_location._value = "http://example.com/ocsp"
+    cert.extensions.get_extension_for_oid.return_value.value[
+        0
+    ].access_method._name = "OCSP"
+    cert.extensions.get_extension_for_oid.return_value.value[
+        0
+    ].access_location._value = "http://example.com/ocsp"
     assert helper.get_ocsp_and_caissuer(cert) == ("http://example.com/ocsp", "")
 
 

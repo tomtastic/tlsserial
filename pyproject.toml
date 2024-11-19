@@ -6,19 +6,19 @@ authors = ["Tom Matthews <anon@pseudo.url>"]
 readme = "README.md"
 
 [tool.poetry.scripts]
-tlsserial = 'tlsserial.main:main'
+tlsserial = 'tlsserial.cli:main'
 
 [tool.poetry.dependencies]
 python = "^3.11"
 click = "^8.1.6"
-cryptography = "^41.0"
+cryptography = "^43.0.3"
 pendulum = "^3.0"
 certifi = "*" # Used in experiments
 pyopenssl = "*" # Used in experiments
 [tool.poetry.group.dev.dependencies]
-types-cryptography = "^3.3.23.2"
-mypy = "*"
+mypy = "*" # with dev dependencies you almost always want the latest
 ruff = "*"
+pre-commit = "*"
 
 [build-system]
 requires = ["poetry-core"]
@@ -27,7 +27,13 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 
-
 [tool.ruff.lint.per-file-ignores]
 #"__init__.py" = ["E402"] # ignore import errors in all __init__.py files
-"**/{tests,docs,tools}/*" = ["E402"] # ignore import errors in selected subdirectories.
+"**/{tests,docs,tools}/*" = [
+    "E402",
+] # ignore import errors in selected subdirectories.
+
+[tool.mypy]
+#disallow_untyped_defs = true
+ignore_missing_imports = true
+exclude = ['venv', '.venv', 'tests']

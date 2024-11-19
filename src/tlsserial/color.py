@@ -1,6 +1,9 @@
 """Colour functions for wrapping strings"""
 
-from sys import __stdin__, __stdout__
+# TODO: take a look at the following if you want to take it further (probably overkill)
+# https://github.com/Textualize/rich
+# https://dslackw.gitlab.io/colored/user_guide/user_guide/
+import sys
 
 # Styles
 BOLD = "\x1b[1m"
@@ -12,11 +15,13 @@ SMILE = "\x1b[38;2;255;153;0m"  # Orange
 COSMOS = "\x1b[38;2;223;42;93m"  # Red
 
 # Dont wrap with ANSI escape colour codes if we're not a TTY supporting that
-IS_TTY_STDIN = __stdin__.isatty()
-IS_TTY_STDOUT = __stdout__.isatty()
+
+IS_TTY_STDIN = sys.stdin.isatty()
+IS_TTY_STDOUT = sys.stdout.isatty()
 
 
 def bold(text: str) -> str:
+    """bold string"""
     if IS_TTY_STDOUT:
         return BOLD + text + END
     else:
@@ -24,6 +29,7 @@ def bold(text: str) -> str:
 
 
 def blue(text: str) -> str:
+    """blue string"""
     if IS_TTY_STDOUT:
         return SKY + text + END
     else:
@@ -31,6 +37,7 @@ def blue(text: str) -> str:
 
 
 def orange(text: str) -> str:
+    """orange string"""
     if IS_TTY_STDOUT:
         return SMILE + text + END
     else:
@@ -38,6 +45,7 @@ def orange(text: str) -> str:
 
 
 def red(text: str) -> str:
+    """red string"""
     if IS_TTY_STDOUT:
         return COSMOS + text + END
     else:

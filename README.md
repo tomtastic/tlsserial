@@ -18,7 +18,7 @@ Options:
   --help       Show this message and exit.
 ```
 
-## from a URL
+### from a URL
 
 ```console
 ❯ poetry run tlsserial --url dell.com
@@ -37,7 +37,7 @@ ca_issuers               : http://aia.entrust.net/l1k-chain256.cer
 serial_number            : 5AF6B00AD82F3B8FACCEF4123D36138C
 ```
 
-## from a file
+### from a file
 
 ```console
 ❯ poetry run tlsserial --file ~/axiom.crt
@@ -55,3 +55,9 @@ ocsp                     : http://ocsp.e3m02.amazontrust.com
 ca_issuers               : http://crt.e3m02.amazontrust.com/e3m02.cer
 serial_number            : 0C9E25D31C5E5ECABC2AB6F10D89C3AF
 ```
+
+
+## Development
+
+poetry install
+poetry run pre-commit install

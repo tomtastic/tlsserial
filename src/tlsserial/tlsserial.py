@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-""" grab some things from a TLS cert"""
+"""grab some things from a TLS cert"""
+
 # TODO:
 # - Report TLS1.3 negotiation for url lookups as NIST SP 800-52 requires support by Jan 2024
 # - Swap back to the pyOpenSSL lib to allow getting entire chain from a host?
@@ -46,7 +47,7 @@ def handle_url(url: str, verbose: bool = False) -> None:
 
 
 def handle_file(file: str, verbose: bool = False) -> None:
-    """ 
+    """
     filename containing a PEM certificate
     """
     host = ""
@@ -79,8 +80,8 @@ def get_args(argv: str) -> tuple:
 
 
 def parse_x509(cert: x509.Certificate) -> NiceCertificate:
-    """ Parse an ugly X509 object
-    Return a NiceCertificate object 
+    """Parse an ugly X509 object
+    Return a NiceCertificate object
     """
 
     # We use helper functions where parsing is gnarly

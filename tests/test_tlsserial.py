@@ -1,11 +1,9 @@
-import logging
-import os
 from unittest import mock
 
 import pytest
 from click.testing import CliRunner
 
-from tlsserial import cli, tlsserial, helper
+from tlsserial import cli, tlsserial
 
 
 # We need to mock the helper functions to avoid making network calls
@@ -59,3 +57,24 @@ def test_get_args():
     with pytest.raises(SystemExit):
         tlsserial.get_args("invalid input")
 
+
+# NOTE: Parametrized test cases allow you to use lots of examples
+
+
+@pytest.mark.parametrize(
+    "input_str, expected",
+    [
+        ("example.com", ("example.com", 443)),
+        ("example.com:8080", ("example.com", "8080")),
+        ("http://example.com:8080", ("example.com", "8080")),
+        ("https://example.com:8080", ("example.com", "8080")),
+        ("ldaps://example.com:8080", ("example.com", "8080")),
+    ],
+)
+def test_get_args_success(input_str, expected):
+    assert tlsserial.get_args(input_str) == expected
+
+
+def test_get_args_failure():
+    with pytest.raises(SystemExit):
+        tlsserial.get_args("invalid input")
