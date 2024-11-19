@@ -113,6 +113,9 @@ def parse_x509(cert: x509.Certificate) -> NiceCertificate:
 
 def display(host: str, cert: NiceCertificate, debug: bool) -> None:
     """Print nicely-formatted attributes of a NiceCertificate object"""
+    # TODO: This function is long and hard to follow. a lot of the `elif`s could be separate
+    # functions and be individually testable.
+    # Maybe use a match/case instead of the big if/elif/else (>=py310)
     print_items = [
         "version",
         "issuer",
@@ -134,6 +137,9 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
 
     width = 24
     matched_host = False
+    # TODO:  Rather than having a lot of print statements here, split the responsibility of building the
+    # string from the output. Build up a string in one function and return it, then in another just print it.
+    # You can test a return value easily, harder to test stdout.
     for item in print_items:
         if "issuer" == item:
             print(f"{orange(f'{item:<{width}}')} : {' '.join(cert.issuer)}")
