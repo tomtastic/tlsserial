@@ -61,3 +61,4 @@ serial_number            : 0C9E25D31C5E5ECABC2AB6F10D89C3AF
 
 poetry install
 poetry run pre-commit install
+poetry run pytest -v
