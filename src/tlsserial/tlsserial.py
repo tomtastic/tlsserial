@@ -20,18 +20,17 @@
 #       - TLS cipher?
 import re
 import sys
+
 import click
 from cryptography import x509
 
 from . import helper
+from .color import blue, bold, orange, red
 from .nice_certificate import NiceCertificate
-from .color import bold, red, orange, blue
 
 
 def handle_url(url: str, verbose: bool = False) -> None:
-    """
-    host || host:port || https://host:port/other
-    """
+    """host || host:port || https://host:port/other."""
     try:
         host, port = get_args(url)
     except ValueError as err:
@@ -80,10 +79,10 @@ def get_args(argv: str) -> tuple:
 
 
 def parse_x509(cert: x509.Certificate) -> NiceCertificate:
-    """Parse an ugly X509 object
-    Return a NiceCertificate object
-    """
+    """Parse an ugly X509 object.
 
+    Return a NiceCertificate object.
+    """
     # We use helper functions where parsing is gnarly
     not_before, not_after = helper.get_before_and_after(cert)
     ocsp, ca_issuers = helper.get_ocsp_and_caissuer(cert)
@@ -112,7 +111,7 @@ def parse_x509(cert: x509.Certificate) -> NiceCertificate:
 
 
 def display(host: str, cert: NiceCertificate, debug: bool) -> None:
-    """Print nicely-formatted attributes of a NiceCertificate object"""
+    """Print nicely-formatted attributes of a NiceCertificate object."""
     # TODO: This function is long and hard to follow. a lot of the `elif`s could be separate
     # functions and be individually testable.
     # Maybe use a match/case instead of the big if/elif/else (>=py310)
@@ -154,30 +153,28 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
                 f"{c[:5]}{bold(blue(c[5:]))}" if c.endswith(f" {host}") else c
                 for c in cert.subject
             ]
-            print(f"{orange(f'{item:<{width}}')} " f": {' '.join(cert.subject)}")
+            print(f"{orange(f'{item:<{width}}')} : {' '.join(cert.subject)}")
         elif "subject_alt_name" == item:
             for san in sorted(cert.sans):
                 if host == str(san) and not matched_host:
                     # Our host arg matches an exact SAN
                     matched_host = True
-                    print(f"{orange(f'{item:<{width}}')} " f": {bold(blue(san))}")
+                    print(f"{orange(f'{item:<{width}}')} : {bold(blue(san))}")
                 elif (
                     str(san).endswith(re.sub("^[a-z1-9_-]+", "*", host))
                     and not matched_host
                 ):
                     # Our host arg matches a wildcard SAN
                     matched_host = True
-                    print(f"{orange(f'{item:<{width}}')} " f": {orange(san)}")
+                    print(f"{orange(f'{item:<{width}}')} : {orange(san)}")
                 else:
-                    print(f"{orange(f'{item:<{width}}')} " f": {san}")
+                    print(f"{orange(f'{item:<{width}}')} : {san}")
         elif "basic_constraints" == item:
             # Lets highlight any certs which are CAs
             if cert.basic_constraints["ca"] == "True":
                 cert.basic_constraints["ca"] = orange("True")
             for item in ["ca", "path_length"]:
-                print(
-                    f"{orange(f'{item:<{width}}')} " f": {cert.basic_constraints[item]}"
-                )
+                print(f"{orange(f'{item:<{width}}')} : {cert.basic_constraints[item]}")
         elif "serial_number" == item:
             print(
                 f"{orange(f'{item:<{width}}')} "
@@ -200,7 +197,7 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
                 f": {cert.key_type} ({cert.key_bits} bit)"
             )
             if debug:
-                print(f"{orange(f'{item:<{width}}')} " f": Factors: {cert.key_factors}")
+                print(f"{orange(f'{item:<{width}}')} : Factors: {cert.key_factors}")
         elif "signature_algorithm" == item:
             print(
                 f"{orange(f'{item:<{width}}')} "
@@ -212,4 +209,4 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
                 f": {', '.join(sorted(cert.__getattribute__(item)))}"
             )
         else:
-            print(f"{orange(f'{item:<{width}}')} " f": {cert.__getattribute__(item)}")
+            print(f"{orange(f'{item:<{width}}')} : {cert.__getattribute__(item)}")

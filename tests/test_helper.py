@@ -1,7 +1,8 @@
 from unittest import mock
 
-from tlsserial import helper
 from cryptography.hazmat.primitives.asymmetric import padding
+
+from tlsserial import helper
 
 
 def test_timethis():

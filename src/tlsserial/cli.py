@@ -4,7 +4,7 @@ from ssl import OPENSSL_VERSION
 
 import click
 
-from . import tlsserial, helper
+from . import helper, tlsserial
 
 
 # https://click.palletsprojects.com/en/8.1.x/quickstart/

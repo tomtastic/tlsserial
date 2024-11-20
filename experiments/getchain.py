@@ -1,8 +1,9 @@
+import logging
 import socket
 import sys
-import logging
-from OpenSSL import SSL, crypto
+
 import certifi
+from OpenSSL import SSL, crypto
 
 hostname = "www.google.com"
 port = 443

@@ -6,6 +6,7 @@ This file allows you to run the program directly from the python module:
 """
 
 import sys
+
 from .cli import main
 
 rc = 1

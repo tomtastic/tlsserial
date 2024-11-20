@@ -6,10 +6,10 @@ import socket
 import ssl
 from time import perf_counter
 from typing import Any, Dict, List  # Lets do static type checking with mypy
+
+import pendulum
 from click import Option, UsageError
 from cryptography import x509
-from cryptography.x509 import DNSName, ExtensionNotFound
-from cryptography.x509.oid import ExtensionOID, NameOID
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import (
     # dh,
@@ -23,7 +23,8 @@ from cryptography.hazmat.primitives.asymmetric import (
     # x448,
     # x25519,
 )
-import pendulum
+from cryptography.x509 import DNSName, ExtensionNotFound
+from cryptography.x509.oid import ExtensionOID, NameOID
 
 NAME_ATTRIBS = (
     ("CN", NameOID.COMMON_NAME),
@@ -154,6 +155,7 @@ def get_certs_from_file(
     filename: str, mode="r"
 ) -> tuple[None | List[x509.Certificate], str]:
     """Use ssl library to get certificate details from disk
+    
     Then use 'cryptography' to parse the certificate and return the ugly X509 object"""
     try:
         base = os.path.dirname(__file__)
