@@ -6,18 +6,59 @@ authors = ["Tom Matthews <anon@pseudo.url>"]
 readme = "README.md"
 
 [tool.poetry.scripts]
-tlsserial = 'tlsserial:main'
+tlsserial = 'tlsserial.cli:main'
 
 [tool.poetry.dependencies]
 python = "^3.11"
 click = "^8.1.6"
-cryptography = "^41.0"
+cryptography = "^43.0.3"
 pendulum = "^3.0"
-
+certifi = "*"            # Used in experiments
+pyopenssl = "*"          # Used in experiments
 [tool.poetry.group.dev.dependencies]
-types-cryptography = "^3.3.23.2"
-mypy = "^1.4.1"
+mypy = "*"       # with dev dependencies you almost always want the latest
+ruff = "*"
+pre-commit = "*"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff]
+[tool.ruff.lint]
+select = [
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "D",  # pydocstyle
+    "PL",  # pylint
+    "FIX", # flake8-fixme
+    "G",   # flake8-logging-format
+    "PTH", # flake8-use-pathlib
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit
+    "A",   # flake8-builtins
+    "S",   # flake8-simplify
+    "ARG", # flake8-unused-arguments
+    "INT", # flake8-gettext
+    "Q",   # flake8-quotes
+    "C4",  # flake8-comprehensions
+    "ISC", # flake8-implicit-str-concat
+]
+fixable = ["ALL"]
+unfixable = []
+[tool.ruff.lint.per-file-ignores]
+#"__init__.py" = ["E402"] # ignore import errors in all __init__.py files
+"**/{tests,docs,tools}/*" = [
+    "E402", # ignore import errors in selected subdirectories.
+    "D100", # C0114 missing-module-docstring
+    "D103", # C0116 missing-function-docstring
+    "S101", # Use of `assert` detected
+]
+
+[tool.mypy]
+#disallow_untyped_defs = true
+ignore_missing_imports = true
+exclude = ['venv', '.venv', 'tests']

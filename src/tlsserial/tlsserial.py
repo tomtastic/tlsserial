@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-""" grab some things from a TLS cert """
+"""grab some things from a TLS cert"""
+
 # TODO:
 # - Report TLS1.3 negotiation for url lookups as NIST SP 800-52 requires support by Jan 2024
 # - Swap back to the pyOpenSSL lib to allow getting entire chain from a host?
@@ -17,65 +18,50 @@
 #       - server temp keys
 #       - server public keys
 #       - TLS cipher?
-import logging
 import re
 import sys
-from ssl import OPENSSL_VERSION
+
 import click
 from cryptography import x509
 
-from lib import helper
-from lib.nice_certificate import NiceCertificate
-from lib.color import bold, red, orange, blue
+from . import helper
+from .color import blue, bold, orange, red
+from .nice_certificate import NiceCertificate
 
 
-# https://click.palletsprojects.com/en/8.1.x/quickstart/
-@click.command()
-@click.option(
-    "--url",
-    cls=helper.MutuallyExclusiveOption,
-    mutually_exclusive=["file"],
-    help="host || host:port || https://host:port/other",
-)
-@click.option(
-    "--file",
-    cls=helper.MutuallyExclusiveOption,
-    mutually_exclusive=["url"],
-    help="filename containing a PEM certificate",
-)
-@click.option("--debug", is_flag=True, type=bool, default=False)
-def main(url, file, debug) -> None:
-    """tlsserial groks X509 certificates for your pleasure"""
-    level = logging.DEBUG
-    fmt = "[%(levelname)s] %(asctime)s - %(message)s"
-    logging.basicConfig(level=level, format=fmt)
-
-    if url:
+def handle_url(url: str, verbose: bool = False) -> None:
+    """host || host:port || https://host:port/other."""
+    try:
         host, port = get_args(url)
-        # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
-        cert_chain = helper.get_certs_from_host(host, port)
-        if cert_chain[0] is not None:
-            for cert in reversed(cert_chain[0]):
-                display(host, parse_x509(cert), debug)
-        else:
-            print(cert_chain[1])
-    elif file:
-        host = ""
-        # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
-        cert_chain = helper.get_certs_from_file(file)
-        if cert_chain[0] is not None:
-            for cert in reversed(cert_chain[0]):
-                display(host, parse_x509(cert), debug)
-                click.echo("")
-        else:
-            print(cert_chain[1])
+    except ValueError as err:
+        print(err)
+        sys.exit(1)
+    # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
+    cert_chain = helper.get_certs_from_host(host, port)
+    if cert_chain[0] is not None:
+        for cert in reversed(cert_chain[0]):
+            display(host, parse_x509(cert), verbose)
     else:
-        click.echo(f"Library version : {OPENSSL_VERSION}")
-        ctx = click.get_current_context()
-        click.echo(ctx.get_help())
+        print(cert_chain[1])
+
+
+def handle_file(file: str, verbose: bool = False) -> None:
+    """
+    filename containing a PEM certificate
+    """
+    host = ""
+    # Assigns all certificates found to tuple cert([c1, c2, ...], "SSL cert")
+    cert_chain = helper.get_certs_from_file(file)
+    if cert_chain[0] is not None:
+        for cert in reversed(cert_chain[0]):
+            display(host, parse_x509(cert), verbose)
+            click.echo("")
+    else:
+        print(cert_chain[1])
 
 
 def get_args(argv: str) -> tuple:
+    # TODO: https://docs.python.org/3/library/urllib.parse.html#url-parsing
     """
     Try to extract a hostname and port from input string
     Returns a tuple of (host, port)
@@ -89,16 +75,16 @@ def get_args(argv: str) -> tuple:
                     return (args_matched[1], args_matched[2])
                 # host and default port
                 return (args_matched[1], 443)
-    print(f"Error parsing the input : {argv}")
-    sys.exit(1)
+    raise ValueError(f"Error parsing the input : {argv}")
 
 
 def parse_x509(cert: x509.Certificate) -> NiceCertificate:
-    """Parse an ugly X509 object"""
-    """Return a NiceCertificate object """
+    """Parse an ugly X509 object.
 
+    Return a NiceCertificate object.
+    """
     # We use helper functions where parsing is gnarly
-    notBefore, notAfter = helper.get_before_and_after(cert)
+    not_before, not_after = helper.get_before_and_after(cert)
     ocsp, ca_issuers = helper.get_ocsp_and_caissuer(cert)
 
     return NiceCertificate(
@@ -111,8 +97,8 @@ def parse_x509(cert: x509.Certificate) -> NiceCertificate:
         basic_constraints=helper.get_basic_constraints(cert),
         key_usage=helper.get_key_usage(cert),
         ext_key_usage=helper.get_ext_key_usage(cert),
-        not_before=notBefore,
-        not_after=notAfter,
+        not_before=not_before,
+        not_after=not_after,
         crls=helper.get_crls(cert),
         ocsp=ocsp,
         serial_as_int=cert.serial_number,
@@ -125,7 +111,10 @@ def parse_x509(cert: x509.Certificate) -> NiceCertificate:
 
 
 def display(host: str, cert: NiceCertificate, debug: bool) -> None:
-    """Print nicely-formatted attributes of a NiceCertificate object"""
+    """Print nicely-formatted attributes of a NiceCertificate object."""
+    # TODO: This function is long and hard to follow. a lot of the `elif`s could be separate
+    # functions and be individually testable.
+    # Maybe use a match/case instead of the big if/elif/else (>=py310)
     print_items = [
         "version",
         "issuer",
@@ -147,42 +136,45 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
 
     width = 24
     matched_host = False
+    # TODO:  Rather than having a lot of print statements here, split the responsibility of building the
+    # string from the output. Build up a string in one function and return it, then in another just print it.
+    # You can test a return value easily, harder to test stdout.
     for item in print_items:
         if "issuer" == item:
             print(f"{orange(f'{item:<{width}}')} : {' '.join(cert.issuer)}")
         elif "chain" == item:
             if len(cert.__getattribute__(item)) > 0:
-                print(f"{orange(f'{item:<{width}}')} " f": {orange(' » ').join(cert.__getattribute__(item))}")
+                print(
+                    f"{orange(f'{item:<{width}}')} "
+                    f": {orange(' » ').join(cert.__getattribute__(item))}"
+                )
         elif "subject" == item:
             cert.subject = [
                 f"{c[:5]}{bold(blue(c[5:]))}" if c.endswith(f" {host}") else c
                 for c in cert.subject
             ]
-            print(f"{orange(f'{item:<{width}}')} " f": {' '.join(cert.subject)}")
+            print(f"{orange(f'{item:<{width}}')} : {' '.join(cert.subject)}")
         elif "subject_alt_name" == item:
             for san in sorted(cert.sans):
                 if host == str(san) and not matched_host:
                     # Our host arg matches an exact SAN
                     matched_host = True
-                    print(f"{orange(f'{item:<{width}}')} " f": {bold(blue(san))}")
+                    print(f"{orange(f'{item:<{width}}')} : {bold(blue(san))}")
                 elif (
                     str(san).endswith(re.sub("^[a-z1-9_-]+", "*", host))
                     and not matched_host
                 ):
                     # Our host arg matches a wildcard SAN
                     matched_host = True
-                    print(f"{orange(f'{item:<{width}}')} " f": {orange(san)}")
+                    print(f"{orange(f'{item:<{width}}')} : {orange(san)}")
                 else:
-                    print(f"{orange(f'{item:<{width}}')} " f": {san}")
+                    print(f"{orange(f'{item:<{width}}')} : {san}")
         elif "basic_constraints" == item:
             # Lets highlight any certs which are CAs
-            if cert.basic_constraints['ca'] == 'True':
-                cert.basic_constraints['ca'] = orange('True')
-            for item in ['ca', 'path_length']:
-                print(
-                    f"{orange(f'{item:<{width}}')} "
-                    f": {cert.basic_constraints[item]}"
-                )
+            if cert.basic_constraints["ca"] == "True":
+                cert.basic_constraints["ca"] = orange("True")
+            for item in ["ca", "path_length"]:
+                print(f"{orange(f'{item:<{width}}')} : {cert.basic_constraints[item]}")
         elif "serial_number" == item:
             print(
                 f"{orange(f'{item:<{width}}')} "
@@ -205,10 +197,7 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
                 f": {cert.key_type} ({cert.key_bits} bit)"
             )
             if debug:
-                print(
-                    f"{orange(f'{item:<{width}}')} "
-                    f": Factors: {cert.key_factors}"
-                )
+                print(f"{orange(f'{item:<{width}}')} : Factors: {cert.key_factors}")
         elif "signature_algorithm" == item:
             print(
                 f"{orange(f'{item:<{width}}')} "
@@ -220,8 +209,4 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
                 f": {', '.join(sorted(cert.__getattribute__(item)))}"
             )
         else:
-            print(f"{orange(f'{item:<{width}}')} " f": {cert.__getattribute__(item)}")
-
-
-if __name__ == "__main__":
-    main()
+            print(f"{orange(f'{item:<{width}}')} : {cert.__getattribute__(item)}")

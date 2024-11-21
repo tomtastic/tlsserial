@@ -1,0 +1,6 @@
+{
+  "cSpell.words": ["ATTRIBS", "caissuer", "ocsp", "tlsserial"],
+  "python.testing.pytestArgs": ["tests"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
+}
