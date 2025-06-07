@@ -3,8 +3,8 @@
 ## Usage
 
 ```console
-❯ poetry install
-❯ poetry run tlsserial
+❯ uv init
+❯ uv run tlsserial
 Usage: tlsserial [OPTIONS]
 
   tlsserial groks X509 certificates for your pleasure
@@ -21,7 +21,7 @@ Options:
 ## from a URL
 
 ```console
-❯ poetry run tlsserial --url dell.com
+❯ uv run tlsserial --url dell.com
 issuer                   : [CN] Entrust Certification Authority - L1K [O] Entrust, Inc. [C] US
 subject                  : [CN] Dell.com [O] Dell [L] Round Rock [ST] Texas [C] US
 subject_alt_name         : Dell.com
@@ -40,7 +40,7 @@ serial_number            : 5AF6B00AD82F3B8FACCEF4123D36138C
 ## from a file
 
 ```console
-❯ poetry run tlsserial --file ~/axiom.crt
+❯ uv run tlsserial --file ~/axiom.crt
 issuer                   : [CN] Amazon ECDSA 384 M02 [O] Amazon [C] US
 subject                  : [CN] *.axiom-partners.com
 subject_alt_name         : *.axiom-partners.com

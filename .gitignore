@@ -1,4 +1,3 @@
-poetry.lock
 tests/*
 __pycache__
 .mypy_cache
