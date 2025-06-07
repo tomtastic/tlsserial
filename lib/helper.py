@@ -256,8 +256,8 @@ def get_before_and_after(cert: x509.Certificate) -> tuple:
     """Returns tuple of notAfter and notBefore datetimes"""
     # Ignore pyright parse export error, it's pendulums fault
     # https://github.com/sdispater/pendulum/pull/693
-    notAfter = pendulum.parse(cert.not_valid_after.isoformat())
-    notBefore = pendulum.parse(cert.not_valid_before.isoformat())
+    notAfter = pendulum.parse(cert.not_valid_after_utc.isoformat())
+    notBefore = pendulum.parse(cert.not_valid_before_utc.isoformat())
     return notBefore, notAfter
 
 
