@@ -1,23 +1,26 @@
-[tool.poetry]
+[project]
 name = "tlsserial"
 version = "0.1.0"
 description = "Examine TLS certificates, locally or online"
-authors = ["Tom Matthews <anon@pseudo.url>"]
+authors = [
+    {name = "Tom Matthews"},
+]
 readme = "README.md"
+requires-python = "<4.0,>=3.11"
+dependencies = [
+    "click>=8.1.6",
+    "cryptography>=41.0",
+    "pendulum>=3.0",
+]
+[dependency-groups]
+dev = [
+    "types-cryptography>=3.3.23.2",
+    "mypy>1.4.1",
+]
 
-[tool.poetry.scripts]
-tlsserial = 'tlsserial:main'
-
-[tool.poetry.dependencies]
-python = "^3.11"
-click = "^8.1.6"
-cryptography = "^41.0"
-pendulum = "^3.0"
-
-[tool.poetry.group.dev.dependencies]
-types-cryptography = "^3.3.23.2"
-mypy = "^1.4.1"
+[tool.uv]
+default-groups = []
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
