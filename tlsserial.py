@@ -190,14 +190,15 @@ def display(host: str, cert: NiceCertificate, debug: bool) -> None:
             )
         elif "not_after" == item:
             warning = ""
-            if cert.not_after <= helper.today:
-                warning = f" {red('(expired!)')}"
-            elif cert.not_after <= helper.next_14d:
-                warning = f" {red('(expires within 14 days!)')}"
-            elif cert.not_after <= helper.next_30d:
-                warning = f" {red('(expires within 30 days!)')}"
-            elif cert.not_after <= helper.next_90d:
-                warning = f" {red('(expires within 90 days!)')}"
+            match cert.not_after:
+                case x if x <= helper.today:
+                    warning = f" {red('(expired!)')}"
+                case x if x <= helper.next_14d:
+                    warning = f" {red('(expires within 14 days!)')}"
+                case x if x <= helper.next_30d:
+                    warning = f" {red('(expires within 30 days!)')}"
+                case x if x <= helper.next_90d:
+                    warning = f" {red('(expires within 90 days!)')}"
             print(f"{orange(f'{item:<{width}}')} : {cert.not_after}" + warning)
         elif "public_key_algorithm" == item:
             print(
